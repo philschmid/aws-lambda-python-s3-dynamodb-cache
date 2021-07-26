@@ -41,7 +41,7 @@ def update_cache_table(dataset_id):
     return response
 
 
-# pseudo code using datasets to get metadata
+# pseudo code 
 def create_cache_file_from_dataset_id(dataset_id):
     """creates dictonary of the file which needs to be cached on s3"""
     # cache dir needs to be tmp, since you can only write files in /tmp in AWS Lambda
