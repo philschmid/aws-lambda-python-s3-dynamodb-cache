@@ -1,0 +1,84 @@
+service: aws-lambda-python-s3-dynamodb-cache
+
+frameworkVersion: '2'
+
+plugins:
+  - serverless-python-requirements
+  - serverless-offline
+
+custom:
+  randomHash: cd77a4d4eb9
+  pythonRequirements:
+    fileName: prod.requirements.txt
+
+provider:
+  name: aws
+  runtime: python3.8
+  lambdaHashingVersion: 20201221
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+  memorySize: 512
+  environment:
+    DYNAMODB_TABLE_NAME: ${self:provider.stage}-dataset-cache-table${self:custom.randomHash}
+    S3_BUCKET_NAME: ${self:provider.stage}-dataset-cache-assets${self:custom.randomHash}
+  # you can add statements to the Lambda function's IAM Role here
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+      Resource: 
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_NAME}"
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_NAME}/*"
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+        - s3:GetBucketLocation
+        - s3:ListBucket
+      Resource: 
+        - "arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}"
+        - "arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*"
+
+
+# you can add packaging information here
+package:
+  individually: false
+  exclude:
+    - package.json
+    - package-log.json
+    - yarn.lock
+    - node_modules/**
+    - tests/**
+    - __pycache__/**
+    - .pytest_cache/**
+    - .serverless/**
+
+functions:
+  get_cache_file:
+    handler: handler.handler
+    events:
+      - httpApi:
+          path: /dataset
+          method: get
+          cors: true
+
+# you can add CloudFormation resource templates here
+resources:
+ Resources:
+    cacheBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.S3_BUCKET_NAME}
+    cacheTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: datasetId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: datasetId
+            KeyType: HASH
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_NAME}
+

@@ -1,0 +1,10 @@
+{
+  "name": "aws-lambda-python-s3-dynamodb-cache",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "serverless-offline": "^7.0.0",
+    "serverless-python-requirements": "^5.1.1"
+  }
+}
